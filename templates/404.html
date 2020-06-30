@@ -10,6 +10,20 @@
   box-sizing: border-box;
 }
 
+/*  Added Red Button with  high lighted  */
+a:link, a:visited {
+  background-color: #f44336;
+  color: white;
+  padding: 15px 25px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+
+a:hover, a:active {
+  background-color: red;
+}
+
 /* Add a gray background color with some padding */
 body {
     font-family: Arial;
@@ -80,30 +94,9 @@ body {
 </style>
 </head>
 <body>
-<div class="header">
-  <h2>Weather Application</h2>
-</div>
-
-<h3>Enter Country/State Name Below</h3>
-<form method="POST">
-  <label for="city">Location:</label>
-  <input type="text" id="city" name="city" value="Delhi"><br>
-  <input type="submit" value="Click Me !">
-</form>
-
-
-<div class="row">
-  <div class="leftcolumn">
-    <div class="card">
-      <h2>{{ weather.city }} Temperature </h2>
-      <h5>Temerature of {{ weather.city }} City is : {{ weather.temperature }} in Degree Celsius</h5>
-      <div class="fakeimg" style="height:80px;">
-        <img src="http://openweathermap.org/img/w/{{ weather.icon }}.png" alt=Image>
-      </div>
-      <p>Weather description: {{ weather.description }}</p>
-      <p></p>
-    </div>
-
-
+<p><b> OOPS !! </b></p>
+<p> Could not found that </p>
+<p> Please go back and try again </p>
+<p><a href="http://localhost:5000">ClickMe!</a></p>
 </body>
 </html>
