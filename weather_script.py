@@ -1,6 +1,6 @@
 import requests
 
-url = 'http://api.openweathermap.org/data/2.5/weather?q={}&appid=8f5ca370c7041d066e0026e9af47526f'
+url = 'http://api.openweathermap.org/data/2.5/weather?q={}&appid=XXXXX'
 
 city_name = 'Del123'
 
