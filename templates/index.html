@@ -10,6 +10,20 @@
   box-sizing: border-box;
 }
 
+/*  Added Red Button with  high lighted  */
+a:link, a:visited {
+  background-color: #f44336;
+  color: white;
+  padding: 15px 25px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+
+a:hover, a:active {
+  background-color: red;
+}
+
 /* Add a gray background color with some padding */
 body {
     font-family: Arial;
@@ -70,6 +84,12 @@ body {
   margin-top: 20px;
 }
 
+
+
+input[type=submit]:hover {
+  background-color: #45a049;
+}
+
 /* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
 @media screen and (max-width: 800px) {
   .leftcolumn, .rightcolumn {   
@@ -87,14 +107,20 @@ body {
 <h3>Enter Country/State Name Below</h3>
 <form method="POST">
   <label for="city">Location:</label>
-  <input type="text" id="city" name="city" value="Delhi"><br>
-  <input type="submit" value="Click Me !">
+  <input type="text" id="city" name="city" placeholder="Delhi"><br>
+  <input type="submit" value="Submit">
 </form>
 
+{% if weather_error %}
+<h2> OOPS !! </h2>
+<h5>{{ weather_error.city }} City does not found. PLease re-submit the correct location</h5>
+
+{% else %}
 
 <div class="row">
   <div class="leftcolumn">
     <div class="card">
+
       <h2>{{ weather.city }} Temperature </h2>
       <h5>Temerature of {{ weather.city }} City is : {{ weather.temperature }} in Degree Celsius</h5>
       <div class="fakeimg" style="height:80px;">
@@ -103,7 +129,7 @@ body {
       <p>Weather description: {{ weather.description }}</p>
       <p></p>
     </div>
-
+{% endif %}
 
 </body>
 </html>
