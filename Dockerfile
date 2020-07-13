@@ -12,11 +12,10 @@ COPY . ./
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Exposing applicaiton on 80 so that it can be accessible on 80
-EXPOSE 80
+EXPOSE 8080
 
 #Copying code to working directory
 COPY . .
 
 #Making default entry as python will launch api.py
-CMD [ "python3", "api.py" ]
-
+CMD [ "python3", "app.py" ]
