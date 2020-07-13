@@ -103,24 +103,19 @@ input[type=submit]:hover {
 <div class="header">
   <h2>Weather Application</h2>
 </div>
-
 <h3>Enter Country/State Name Below</h3>
 <form method="POST">
   <label for="city">Location:</label>
   <input type="text" id="city" name="city" placeholder="Delhi"><br>
   <input type="submit" value="Submit">
 </form>
-
 {% if weather_error %}
 <h2> OOPS !! </h2>
 <h5>{{ weather_error.city }} City does not found. PLease re-submit the correct location</h5>
-
 {% else %}
-
 <div class="row">
   <div class="leftcolumn">
     <div class="card">
-
       <h2>{{ weather.city }} Temperature </h2>
       <h5>Temerature of {{ weather.city }} City is : {{ weather.temperature }} in Degree Celsius</h5>
       <div class="fakeimg" style="height:80px;">
@@ -130,6 +125,5 @@ input[type=submit]:hover {
       <p></p>
     </div>
 {% endif %}
-
 </body>
 </html>
