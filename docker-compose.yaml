@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        buildno: 1
+     ports:
+        - "8000:8080"
