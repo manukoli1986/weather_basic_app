@@ -33,3 +33,8 @@ stages:
         Contents: 'Dockerfile'
         TargetFolder: 'drop'
         OverWrite: true
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: 'Dockerfile'
+        TargetFolder: '$(build.artifactstagingdirectory)/drop/'
