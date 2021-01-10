@@ -38,3 +38,7 @@ stages:
         SourceFolder: '$(Build.SourcesDirectory)'
         Contents: 'Dockerfile'
         TargetFolder: '$(build.artifactstagingdirectory)/drop/'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: drop
