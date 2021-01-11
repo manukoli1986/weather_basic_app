@@ -27,6 +27,13 @@ stages:
         dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
         tags: |
           $(tag)
+    - task: DockerCompose@0
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Free Trial(e2d18e59-76c4-4b18-957f-c019eb88f462)'
+        azureContainerRegistry: '{"loginServer":"dockerhub1.azurecr.io", "id" : "/subscriptions/e2d18e59-76c4-4b18-957f-c019eb88f462/resourceGroups/simple-java-project/providers/Microsoft.ContainerRegistry/registries/dockerhub1"}'
+        dockerComposeFile: '**/Dockerfile'
+        action: 'Push services'
     - task: CopyFiles@2
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)/'
@@ -44,19 +51,19 @@ stages:
     #     publishLocation: 'Drop'
     
 
-stage: Deploy
-  displayName: Deploy App On Container
-  jobs:  
-  - job: Deploy
-    displayName: Deploy
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - task: Docker@2
-      displayName: Build an image
-      inputs:
-        command: build
-        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-        tags: |
-          $(tag)
+# stage: Deploy
+#   displayName: Deploy App On Container
+#   jobs:  
+#   - job: Deploy
+#     displayName: Deploy
+#     pool:
+#       vmImage: 'ubuntu-latest'
+#     steps:
+#     - task: Docker@2
+#       displayName: Build an image
+#       inputs:
+#         command: build
+#         dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+#         tags: |
+#           $(tag)
     
