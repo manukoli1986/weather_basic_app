@@ -47,8 +47,10 @@ stages:
         targetPath: '$(Pipeline.Workspace)'
         artifact: 'drop'
         publishLocation: 'pipeline'
+        OverWrite: true
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
         publishLocation: 'Container'
+        OverWrite: true
