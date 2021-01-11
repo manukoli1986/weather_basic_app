@@ -33,22 +33,12 @@ stages:
         Contents: '*'
         TargetFolder: '$(build.artifactstagingdirectory)/'
         OverWrite: true
-    # - task: CopyFiles@2
-    #   inputs:
-    #     SourceFolder: '$(Build.SourcesDirectory)'
-    #     Contents: 'Dockerfile'
-    #     TargetFolder: '$(build.artifactstagingdirectory)/drop/'
-    # - task: PublishBuildArtifacts@1
-    #   inputs:
-    #     pathToPublish: '$(Build.ArtifactStagingDirectory)'
-    #     artifactName: drop
-    - task: PublishPipelineArtifact@1
+    - task: CopyFiles@2
       inputs:
-        targetPath: '$(Pipeline.Workspace)'
-        artifact: 'drop'
-        publishLocation: 'pipeline'
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: 'Dockerfile'
+        TargetFolder: '$(build.artifactstagingdirectory)'
     - task: PublishBuildArtifacts@1
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
+        pathToPublish: '$(build.artifactstagingdirectory)'
+        artifactName: drop
