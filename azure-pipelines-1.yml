@@ -34,6 +34,9 @@ stages:
         azureContainerRegistry: '{"loginServer":"dockerhub1.azurecr.io", "id" : "/subscriptions/e2d18e59-76c4-4b18-957f-c019eb88f462/resourceGroups/simple-java-project/providers/Microsoft.ContainerRegistry/registries/dockerhub1"}'
         command: 'buildAndPush'
         Dockerfile: '**/Dockerfile'
+        repository: dockerhub1
+        tags: |
+          $(tag)
     - task: CopyFiles@2
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)/'
