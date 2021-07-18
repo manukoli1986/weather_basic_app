@@ -1,12 +1,12 @@
 steps:
 - name: "gcr.io/cloud-builders/docker"
-  args: ["build", "-t", "gcr.io/project-id/image:tag", "."]
+  args: ["build", "-t", "gcr.io/project-id/image:new", "."]
 - name: "gcr.io/cloud-builders/docker"
-  args: ["push", "gcr.io/project-id/image:tag"]
+  args: ["push", "gcr.io/project-id/image:new"]
 - name: "gcr.io/cloud-builders/gke-deploy"
   args:
   - run
   - --filename=weather-app-deployment.yaml
-  - --image=gcr.io/project-id/image:tag
+  - --image=gcr.io/project-id/image:new
   - --location=us-central1-c
   - --cluster=cluster-1
