@@ -1,12 +1,12 @@
 steps:
 - name: "gcr.io/cloud-builders/docker"
-  args: ["build", "-t", "gcr.io/project-id/image:new", "."]
+  args: ["build", "-t", "gcr.io/inbound-hawk-320111/image:new", "."]
 - name: "gcr.io/cloud-builders/docker"
-  args: ["push", "gcr.io/project-id/image:new"]
+  args: ["push", "gcr.io/inbound-hawk-320111/image:new"]
 - name: "gcr.io/cloud-builders/gke-deploy"
   args:
   - run
   - --filename=weather-app-deployment.yaml
-  - --image=gcr.io/project-id/image:new
+  - --image=gcr.io/inbound-hawk-320111/image:new
   - --location=us-central1-c
   - --cluster=cluster-1
