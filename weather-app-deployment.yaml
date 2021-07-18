@@ -17,7 +17,7 @@ spec:
       containers:
       - name: weather-app1
         #image: docker.io/manukoli1986/weather-app:v1
-        image: gcr.io/project-id/image:new
+        image: gcr.io/inbound-hawk-320111/image:new
         ports:
         - containerPort: 8080
 ---
