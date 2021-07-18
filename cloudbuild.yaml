@@ -3,6 +3,8 @@ steps:
   args: ["build", "-t", "gcr.io/inbound-hawk-320111/image:new", "."]
 - name: "gcr.io/cloud-builders/docker"
   args: ["push", "gcr.io/inbound-hawk-320111/image:new"]
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["container", "clusters", "update", "cluster-1", "--zone", "us-central1-c", "--project", "inbound-hawk-320111", "--enable-master-authorized-networks", "--master-authorized-networks", "0.0.0.0/0"]
 - name: "gcr.io/cloud-builders/gke-deploy"
   args:
   - run
@@ -10,3 +12,5 @@ steps:
   - --image=gcr.io/inbound-hawk-320111/image:new
   - --location=us-central1-c
   - --cluster=cluster-1
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["container", "clusters", "update", "cluster-1", "--zone", "us-central1-c", "--project", "inbound-hawk-320111", "--no-enable-master-authorized-networks"]
