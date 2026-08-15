@@ -79,7 +79,23 @@ jobs:
             -p 8080:8080 "$IMG"
           for i in $(seq 1 15); do
             if curl -fsS http://localhost:8080/ >/dev/null; then
-              echo "App responded OK"; docker rm -f weather-smoke; exit 0
+              echo "App responded OK"
+              # Read the version the running image reports (UI footer).
+              RUNNING_VER=$(curl -fsS http://localhost:8080/ | grep -oE 'class="version">v[^<]*' | sed 's/.*>v//')
+              echo "Image reports version: $RUNNING_VER"
+              docker rm -f weather-smoke
+              # Publish version to the run summary page so it's easy to see.
+              {
+                echo "## Published image"
+                echo ""
+                echo "| Field | Value |"
+                echo "|-------|-------|"
+                echo "| Version | \`${VERSION_PREFIX}.${GITHUB_RUN_NUMBER}\` |"
+                echo "| Running UI reports | \`v${RUNNING_VER}\` |"
+                echo "| Tags | \`${VERSION_PREFIX}.${GITHUB_RUN_NUMBER}\`, \`latest\`, \`sha-$(git rev-parse --short HEAD)\` |"
+                echo "| Image | \`${IMAGE_NAME}\` |"
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
             fi
             sleep 2
           done
