@@ -1,129 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='main.css')}}">
+<title>Weather App</title>
 <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="16x16">
-<!-- <link rel="icon" href="favicon.ico" type="image/gif" > -->
 <style>
-* {
-  box-sizing: border-box;
-}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/*  Added Red Button with  high lighted  */
-a:link, a:visited {
-  background-color: #f44336;
-  color: white;
-  padding: 15px 25px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-}
+  :root { --accent: #ffffff; }
 
-a:hover, a:active {
-  background-color: red;
-}
-
-/* Add a gray background color with some padding */
-body {
-    font-family: Arial;
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 20px;
-    
-    background: #DDF3F5;
+    color: #fff;
+    transition: background 0.6s ease;
+    /* Default background, overridden per weather condition below. */
+    background: linear-gradient(135deg, #2c3e50, #4ca1af);
   }
 
-/* Header/Blog Title */
-.header {
-  padding: 10px;
-  font-size: 20px;
-  text-align: center;
-  background: lightgreen;
+  /* Weather-driven backgrounds. body class set from weather.main / night. */
+  body.clear   { background: linear-gradient(135deg, #2980b9, #6dd5fa, #ffffff); }
+  body.clouds  { background: linear-gradient(135deg, #757f9a, #d7dde8); }
+  body.rain,
+  body.drizzle { background: linear-gradient(135deg, #373b44, #4286f4); }
+  body.thunderstorm { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
+  body.snow    { background: linear-gradient(135deg, #83a4d4, #b6fbff); color: #223; }
+  body.mist,
+  body.haze,
+  body.fog     { background: linear-gradient(135deg, #606c88, #3f4c6b); }
+  body.night   { background: linear-gradient(135deg, #0f2027, #2c5364); }
 
-}
-
-/* Create two unequal columns that floats next to each other */
-/* Left column */
-.leftcolumn {   
-  float: left;
-  width: 75%;
-}
-
-/* Right column */
-.rightcolumn {
-  float: left;
-  width: 25%;
-  padding-left: 20px;
-}
-
-/* Fake image */
-.fakeimg {
-  background-color: #aaa;
-  width: 100%;
-  padding: 20px;
-}
-
-/* Add a card effect for articles */
-.card {
-   background-color: white;
-   padding: 20px;
-   margin-top: 20px;
-}
-
-/* Clear floats after the columns */
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-}
-
-/* Footer */
-.footer {
-  padding: 20px;
-  text-align: center;
-  background: #ddd;
-  margin-top: 20px;
-}
-
-
-
-input[type=submit]:hover {
-  background-color: #45a049;
-}
-
-/* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
-@media screen and (max-width: 800px) {
-  .leftcolumn, .rightcolumn {   
+  .card {
     width: 100%;
-    padding: 0;
+    max-width: 420px;
+    padding: 32px;
+    border-radius: 24px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   }
-}
+
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.5px; }
+
+  form { display: flex; gap: 8px; margin-bottom: 24px; }
+
+  input[type=text] {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+    background: rgba(255, 255, 255, 0.85);
+    color: #222;
+  }
+
+  input[type=submit] {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.9);
+    color: #2c3e50;
+    transition: transform 0.15s ease;
+  }
+  input[type=submit]:hover { transform: scale(1.05); }
+
+  .city { font-size: 26px; font-weight: 600; }
+  .temp { font-size: 64px; font-weight: 200; margin: 8px 0; }
+  .desc { font-size: 17px; text-transform: capitalize; opacity: 0.9; }
+  .icon img { width: 120px; height: 120px; }
+
+  .error h2 { font-size: 40px; margin-bottom: 10px; }
+  .error p { opacity: 0.9; }
 </style>
 </head>
-<body>
-<div class="header">
-  <h2>Weather Application</h2>
-</div>
-<h3>Enter Country/State Name Below</h3>
-<form method="POST">
-  <label for="city">Location:</label>
-  <input type="text" id="city" name="city" placeholder="Delhi"><br>
-  <input type="submit" value="Submit">
-</form>
-{% if weather_error %}
-<h2> OOPS !! </h2>
-<h5>{{ weather_error.city }} City does not found. PLease re-submit the correct location</h5>
-{% else %}
-<div class="row">
-  <div class="leftcolumn">
-    <div class="card">
-      <h2>{{ weather.city }} Temperature </h2>
-      <h5>Temerature of {{ weather.city }} City is : {{ weather.temperature }} in Degree Celsius</h5>
-      <div class="fakeimg" style="height:80px;">
-        <img src="http://openweathermap.org/img/w/{{ weather.icon }}.png" alt=Image>
-      </div>
-      <p>Weather description: {{ weather.description }}</p>
-      <p></p>
+<body class="{% if weather %}{{ weather.main|lower }}{% if not weather.is_day %} night{% endif %}{% endif %}">
+  <div class="card">
+    <h1>🌤️ Weather App</h1>
+
+    <form method="POST">
+      <input type="text" id="city" name="city" placeholder="Enter a city…" autofocus>
+      <input type="submit" value="Search">
+    </form>
+
+    {% if weather_error %}
+    <div class="error">
+      <h2>😕 Oops!</h2>
+      <p><strong>{{ weather_error.city }}</strong> not found.</p>
+      <p>{{ weather_error.country }}</p>
     </div>
-{% endif %}
+    {% elif weather %}
+    <div class="icon">
+      <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="{{ weather.description }}">
+    </div>
+    <div class="city">{{ weather.city }}</div>
+    <div class="temp">{{ weather.temperature }}°C</div>
+    <div class="desc">{{ weather.description }}</div>
+    {% endif %}
+  </div>
 </body>
 </html>

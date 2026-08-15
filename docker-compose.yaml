@@ -3,6 +3,9 @@ services:
     web:
       image: weather
       build: .
+      environment:
+        # Pass the key from your shell/env: export OPENWEATHER_API_KEY=xxx
+        - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       deploy:
         replicas: 2
         restart_policy:
