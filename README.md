@@ -12,6 +12,13 @@ export OPENWEATHER_API_KEY=<your_key>
 python app.py            # http://localhost:8080
 ```
 
+## MCP server
+
+An MCP server exposes this app's weather data as tools for AI clients
+(Claude Code, Claude Desktop). See the sub-page:
+**[weather_mcp/README.md](weather_mcp/README.md)** — how it's built and how to
+connect a client.
+
 ## Run with Docker
 
 ```bash
