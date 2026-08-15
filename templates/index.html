@@ -102,6 +102,17 @@
   .detail .k { font-size: 12px; opacity: 0.8; }
   .detail .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
 
+  /* Hourly temperature graph */
+  .hourly { margin-top: 18px; padding: 14px 8px 8px; border-radius: 14px; background: rgba(255,255,255,0.12); }
+  .hourly-title { font-size: 13px; opacity: 0.8; margin: 0 8px 6px; }
+  #tempChart { width: 100%; height: 110px; display: block; }
+  #tempChart text { fill: #fff; font-size: 13px; font-weight: 600; }
+  #tempChart polyline { fill: none; stroke: #ffe066; stroke-width: 2.5; }
+  #tempChart circle { fill: #fff; }
+  .hours { display: flex; margin-top: 4px; }
+  .hour { flex: 1; text-align: center; font-size: 11px; opacity: 0.85; }
+  .hour img { width: 32px; height: 32px; display: block; margin: 0 auto; }
+
   /* Forecast strip */
   .forecast { display: flex; gap: 8px; margin-top: 18px; overflow-x: auto; }
   .fc {
@@ -240,6 +251,20 @@
       <div class="detail"><div class="k">Wind</div><div class="v">{{ weather.wind }} km/h</div></div>
     </div>
 
+    {% if hourly %}
+    <!-- Hourly temperature graph (SVG drawn by JS from data below) -->
+    <div class="hourly">
+      <div class="hourly-title">Next hours</div>
+      <svg id="tempChart" viewBox="0 0 640 150" preserveAspectRatio="none"></svg>
+      <div class="hours">
+        {% for h in hourly %}
+        <div class="hour"><img src="https://openweathermap.org/img/wn/{{ h.icon }}.png" alt=""><span>{{ h.label }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <script id="hourlyData" type="application/json">{{ hourly|tojson }}</script>
+    {% endif %}
+
     {% if forecast %}
     <div class="forecast">
       {% for d in forecast %}
@@ -263,6 +288,41 @@
       document.getElementById('city').value = city;
       document.getElementById('wform').submit();
     }
+
+    // ---- Hourly temperature line graph (SVG) ----
+    (function () {
+      var el = document.getElementById('hourlyData');
+      var svg = document.getElementById('tempChart');
+      if (!el || !svg) return;
+      var data = JSON.parse(el.textContent);
+      if (!data.length) return;
+
+      var W = 640, H = 150, padTop = 30, padBottom = 25;
+      var temps = data.map(function (d) { return d.temp; });
+      var min = Math.min.apply(null, temps), max = Math.max.apply(null, temps);
+      var span = (max - min) || 1;
+      var stepX = W / data.length;
+
+      function x(i) { return stepX * i + stepX / 2; }
+      function y(t) { return padTop + (1 - (t - min) / span) * (H - padTop - padBottom); }
+
+      var pts = data.map(function (d, i) { return x(i) + ',' + y(d.temp); }).join(' ');
+      var ns = 'http://www.w3.org/2000/svg';
+      var line = document.createElementNS(ns, 'polyline');
+      line.setAttribute('points', pts);
+      svg.appendChild(line);
+
+      data.forEach(function (d, i) {
+        var c = document.createElementNS(ns, 'circle');
+        c.setAttribute('cx', x(i)); c.setAttribute('cy', y(d.temp)); c.setAttribute('r', 3);
+        svg.appendChild(c);
+        var t = document.createElementNS(ns, 'text');
+        t.setAttribute('x', x(i)); t.setAttribute('y', y(d.temp) - 10);
+        t.setAttribute('text-anchor', 'middle');
+        t.textContent = d.temp + '°';
+        svg.appendChild(t);
+      });
+    })();
 
     // ---- Animated background particles, chosen by weather condition ----
     (function () {

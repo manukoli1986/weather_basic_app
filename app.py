@@ -74,14 +74,24 @@ def funny_gif(condition):
 
 
 def build_forecast(city_name):
-    """Aggregate the 3-hour forecast into per-day min/max + condition."""
+    """Fetch the 3-hour forecast once; return dict of daily + hourly views."""
     params = {'q': city_name, 'appid': API_KEY, 'units': 'metric'}
     try:
         data = requests.get(FORECAST_URL, params=params, timeout=10).json()
     except requests.RequestException:
-        return []
+        return {'daily': [], 'hourly': []}
     if str(data.get('cod')) != '200':
-        return []
+        return {'daily': [], 'hourly': []}
+
+    # Hourly: next 8 slots (~24h) for the temperature graph.
+    hourly = []
+    for item in data['list'][:8]:
+        dt = datetime.utcfromtimestamp(item['dt'])
+        hourly.append({
+            'label': dt.strftime('%-I%p').lower(),   # e.g. 3pm
+            'temp': round(item['main']['temp']),
+            'icon': item['weather'][0]['icon'],
+        })
 
     days = OrderedDict()
     for item in data['list']:
@@ -104,16 +114,16 @@ def build_forecast(city_name):
             day['icon'] = item['weather'][0]['icon']
             day['description'] = item['weather'][0]['description']
 
-    forecast = []
+    daily = []
     for day in list(days.values())[:6]:
-        forecast.append({
+        daily.append({
             'label': day['label'],
             'min': "{:.0f}".format(day['min']),
             'max': "{:.0f}".format(day['max']),
             'icon': day['icon'],
             'description': day['description'],
         })
-    return forecast
+    return {'daily': daily, 'hourly': hourly}
 
 
 def dress_character(temp_c, condition_main):
@@ -183,7 +193,8 @@ def index():
     if error:
         return render_template('index.html', weather_error=error)
     forecast = build_forecast(city_name)
-    return render_template('index.html', weather=weather, forecast=forecast)
+    return render_template('index.html', weather=weather,
+                           forecast=forecast['daily'], hourly=forecast['hourly'])
 
 
 if __name__ == "__main__":
