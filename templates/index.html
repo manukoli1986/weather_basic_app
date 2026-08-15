@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Weather App</title>
-<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="16x16">
+{% set tab_emoji = weather.emoji if weather else '🌤️' %}
+<title>{% if weather %}{{ weather.emoji }} {{ weather.temperature }}°C · {{ weather.city|title }}{% else %}Weather App{% endif %}</title>
+<!-- Favicon = current weather emoji, drawn as inline SVG (changes per city) -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>{{ tab_emoji }}</text></svg>">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
