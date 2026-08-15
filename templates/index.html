@@ -8,18 +8,15 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root { --accent: #ffffff; }
-
   body {
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 20px;
+    padding: 24px;
     color: #fff;
     transition: background 0.6s ease;
-    /* Default background, overridden per weather condition below. */
     background: linear-gradient(135deg, #2c3e50, #4ca1af);
   }
 
@@ -35,12 +32,11 @@
   body.fog     { background: linear-gradient(135deg, #606c88, #3f4c6b); }
   body.night   { background: linear-gradient(135deg, #0f2027, #2c5364); }
 
+  .wrap { width: 100%; max-width: 640px; }
+
   .card {
-    width: 100%;
-    max-width: 420px;
-    padding: 32px;
+    padding: 28px;
     border-radius: 24px;
-    text-align: center;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -48,53 +44,80 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   }
 
-  h1 { font-size: 22px; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.5px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 18px; text-align: center; }
 
-  form { display: flex; gap: 8px; margin-bottom: 24px; }
-
+  form { display: flex; gap: 8px; }
   input[type=text] {
-    flex: 1;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    outline: none;
-    background: rgba(255, 255, 255, 0.85);
-    color: #222;
+    flex: 1; padding: 12px 16px; border: none; border-radius: 12px;
+    font-size: 15px; outline: none; background: rgba(255,255,255,0.9); color: #222;
   }
-
   input[type=submit] {
-    padding: 12px 18px;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.9);
-    color: #2c3e50;
+    padding: 12px 18px; border: none; border-radius: 12px; font-size: 15px;
+    font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.9); color: #2c3e50;
     transition: transform 0.15s ease;
   }
   input[type=submit]:hover { transform: scale(1.05); }
 
-  .city { font-size: 26px; font-weight: 600; }
-  .temp { font-size: 64px; font-weight: 200; margin: 8px 0; }
-  .desc { font-size: 17px; text-transform: capitalize; opacity: 0.9; }
-  .icon img { width: 120px; height: 120px; }
+  /* Quick-pick city chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; justify-content: center; }
+  .chips button {
+    border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.12);
+    color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 13px; cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .chips button:hover { background: rgba(255,255,255,0.3); }
 
+  /* Current weather */
+  .now { display: flex; align-items: center; gap: 20px; margin-top: 22px; }
+  .now .fun { font-size: 72px; line-height: 1; }
+  .now .fun img { width: 140px; height: auto; border-radius: 16px; }
+  .now .main { flex: 1; }
+  .now .city { font-size: 22px; font-weight: 600; }
+  .now .temp { font-size: 54px; font-weight: 200; }
+  .now .desc { font-size: 16px; text-transform: capitalize; opacity: 0.9; }
+
+  .details { display: flex; gap: 10px; margin-top: 18px; }
+  .detail {
+    flex: 1; text-align: center; padding: 12px 6px; border-radius: 14px;
+    background: rgba(255,255,255,0.12);
+  }
+  .detail .k { font-size: 12px; opacity: 0.8; }
+  .detail .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+
+  /* Forecast strip */
+  .forecast { display: flex; gap: 8px; margin-top: 18px; overflow-x: auto; }
+  .fc {
+    min-width: 78px; flex: 1; text-align: center; padding: 12px 6px; border-radius: 14px;
+    background: rgba(255,255,255,0.12);
+  }
+  .fc .day { font-size: 13px; font-weight: 600; }
+  .fc img { width: 46px; height: 46px; }
+  .fc .hl { font-size: 14px; }
+  .fc .hl b { font-weight: 700; }
+  .fc .lo { opacity: 0.7; }
+
+  .error { text-align: center; margin-top: 22px; }
   .error h2 { font-size: 40px; margin-bottom: 10px; }
-  .error p { opacity: 0.9; }
 
-  .version { margin-top: 20px; font-size: 12px; opacity: 0.7; letter-spacing: 0.5px; }
+  .version { margin-top: 18px; font-size: 12px; opacity: 0.7; text-align: center; }
 </style>
 </head>
 <body class="{% if weather %}{{ weather.main|lower }}{% if not weather.is_day %} night{% endif %}{% endif %}">
+  <div class="wrap">
   <div class="card">
     <h1>🌤️ Weather App</h1>
 
-    <form method="POST">
+    <form method="POST" id="wform">
       <input type="text" id="city" name="city" placeholder="Enter a city…" autofocus>
       <input type="submit" value="Search">
     </form>
+
+    <!-- Quick-pick popular cities: click to search instantly -->
+    <div class="chips">
+      {% for c in popular_cities %}
+      <button type="button" onclick="pick('{{ c }}')">{{ c }}</button>
+      {% endfor %}
+    </div>
 
     {% if weather_error %}
     <div class="error">
@@ -103,15 +126,51 @@
       <p>{{ weather_error.country }}</p>
     </div>
     {% elif weather %}
-    <div class="icon">
+    <div class="now">
+      <div class="fun">
+        {% if weather.gif %}
+          <img src="{{ weather.gif }}" alt="weather gif">
+        {% else %}
+          {{ weather.emoji }}
+        {% endif %}
+      </div>
+      <div class="main">
+        <div class="city">{{ weather.city }}</div>
+        <div class="temp">{{ weather.temperature }}°C</div>
+        <div class="desc">{{ weather.description }}</div>
+      </div>
       <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="{{ weather.description }}">
     </div>
-    <div class="city">{{ weather.city }}</div>
-    <div class="temp">{{ weather.temperature }}°C</div>
-    <div class="desc">{{ weather.description }}</div>
+
+    <div class="details">
+      <div class="detail"><div class="k">Feels like</div><div class="v">{{ weather.feels_like }}°</div></div>
+      <div class="detail"><div class="k">Humidity</div><div class="v">{{ weather.humidity }}%</div></div>
+      <div class="detail"><div class="k">Wind</div><div class="v">{{ weather.wind }} km/h</div></div>
+    </div>
+
+    {% if forecast %}
+    <div class="forecast">
+      {% for d in forecast %}
+      <div class="fc">
+        <div class="day">{{ d.label }}</div>
+        <img src="https://openweathermap.org/img/wn/{{ d.icon }}.png" alt="{{ d.description }}">
+        <div class="hl"><b>{{ d.max }}°</b> <span class="lo">{{ d.min }}°</span></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     {% endif %}
 
     <div class="version">v{{ app_version }}</div>
   </div>
+  </div>
+
+  <script>
+    // Quick-pick: fill the box and submit.
+    function pick(city) {
+      document.getElementById('city').value = city;
+      document.getElementById('wform').submit();
+    }
+  </script>
 </body>
 </html>
