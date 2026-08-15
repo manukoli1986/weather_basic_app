@@ -3,6 +3,10 @@ FROM frolvlad/alpine-python3
 
 MAINTAINER "Mayank Koli"
 
+# Build-time version, injected by CI (--build-arg APP_VERSION=1.0.N).
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
+
 #choosing /usr/src/app as working directory
 WORKDIR /usr/src/app
 

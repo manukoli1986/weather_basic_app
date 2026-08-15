@@ -83,6 +83,8 @@
 
   .error h2 { font-size: 40px; margin-bottom: 10px; }
   .error p { opacity: 0.9; }
+
+  .version { margin-top: 20px; font-size: 12px; opacity: 0.7; letter-spacing: 0.5px; }
 </style>
 </head>
 <body class="{% if weather %}{{ weather.main|lower }}{% if not weather.is_day %} night{% endif %}{% endif %}">
@@ -108,6 +110,8 @@
     <div class="temp">{{ weather.temperature }}°C</div>
     <div class="desc">{{ weather.description }}</div>
     {% endif %}
+
+    <div class="version">v{{ app_version }}</div>
   </div>
 </body>
 </html>

@@ -11,6 +11,13 @@ app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 API_KEY = os.environ.get('OPENWEATHER_API_KEY')
 BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 DEFAULT_CITY = os.environ.get('DEFAULT_CITY', 'Lucknow')
+# Build version, set by CI at image build time (see Dockerfile ARG APP_VERSION).
+APP_VERSION = os.environ.get('APP_VERSION', 'dev')
+
+
+@app.context_processor
+def inject_version():
+    return {'app_version': APP_VERSION}
 
 
 def fetch_weather(city_name):
