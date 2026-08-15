@@ -76,6 +76,22 @@
   }
   input[type=submit]:hover { transform: scale(1.05); }
 
+  /* Tools row: location + unit toggle */
+  .tools { display: flex; gap: 8px; margin-top: 12px; justify-content: center; }
+  .tools .tool {
+    border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.15);
+    color: #fff; padding: 8px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .tools .tool:hover { background: rgba(255,255,255,0.3); }
+
+  /* Fun fact card */
+  .fact {
+    margin-top: 16px; padding: 12px 16px; border-radius: 14px; font-size: 14px;
+    background: rgba(255,236,150,0.22); border: 1px solid rgba(255,236,150,0.4);
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+
   /* Quick-pick city chips */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; justify-content: center; }
   .chips button {
@@ -201,8 +217,19 @@
 
     <form method="POST" id="wform">
       <input type="text" id="city" name="city" placeholder="Enter a city…" autofocus>
+      <!-- carried between requests so unit toggle / location keep context -->
+      <input type="hidden" name="units" id="units" value="{{ units }}">
+      <input type="hidden" name="lat" id="lat">
+      <input type="hidden" name="lon" id="lon">
       <input type="submit" value="Search">
     </form>
+
+    <div class="tools">
+      <button type="button" class="tool" onclick="useLocation()">📍 Use my location</button>
+      <button type="button" class="tool" onclick="toggleUnit()">
+        {% if units == 'imperial' %}Switch to °C{% else %}Switch to °F{% endif %}
+      </button>
+    </div>
 
     <!-- Quick-pick popular cities: click to search instantly -->
     <div class="chips">
@@ -239,7 +266,7 @@
       </div>
       <div class="main">
         <div class="city">{{ weather.city }}</div>
-        <div class="temp">{{ weather.temperature }}°C</div>
+        <div class="temp">{{ weather.temperature }}°{{ weather.temp_symbol }}</div>
         <div class="desc">{{ weather.description }}</div>
       </div>
       <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="{{ weather.description }}">
@@ -248,8 +275,11 @@
     <div class="details">
       <div class="detail"><div class="k">Feels like</div><div class="v">{{ weather.feels_like }}°</div></div>
       <div class="detail"><div class="k">Humidity</div><div class="v">{{ weather.humidity }}%</div></div>
-      <div class="detail"><div class="k">Wind</div><div class="v">{{ weather.wind }} km/h</div></div>
+      <div class="detail"><div class="k">Wind</div><div class="v">{{ weather.wind }} {{ weather.wind_unit }}</div></div>
     </div>
+
+    <!-- Fun fact for kids -->
+    <div class="fact">💡 <span>{{ weather.fact }}</span></div>
 
     {% if hourly %}
     <!-- Hourly temperature graph (SVG drawn by JS from data below) -->
@@ -283,9 +313,36 @@
   </div>
 
   <script>
-    // Quick-pick: fill the box and submit.
+    // Quick-pick: fill the box and submit (clear any stale coords first).
     function pick(city) {
+      document.getElementById('lat').value = '';
+      document.getElementById('lon').value = '';
       document.getElementById('city').value = city;
+      document.getElementById('wform').submit();
+    }
+
+    // Use my location: ask browser for coordinates, then submit.
+    function useLocation() {
+      if (!navigator.geolocation) { alert('Location not supported by this browser.'); return; }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        document.getElementById('lat').value = pos.coords.latitude.toFixed(4);
+        document.getElementById('lon').value = pos.coords.longitude.toFixed(4);
+        document.getElementById('city').value = '';   // coords win over text
+        document.getElementById('wform').submit();
+      }, function () {
+        alert('Could not get your location. Please allow location access.');
+      });
+    }
+
+    // Toggle °C <-> °F, keep the same place, resubmit.
+    function toggleUnit() {
+      var u = document.getElementById('units');
+      u.value = (u.value === 'imperial') ? 'metric' : 'imperial';
+      // Keep current city if we have one shown; coords stay in hidden fields.
+      var shown = {{ (weather.city if weather else '')|tojson }};
+      if (shown && !document.getElementById('lat').value) {
+        document.getElementById('city').value = shown;
+      }
       document.getElementById('wform').submit();
     }
 

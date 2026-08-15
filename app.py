@@ -1,6 +1,7 @@
 # This application is using color from https://colorhunt.co/
 
 import os
+import random
 import requests
 from collections import OrderedDict
 from datetime import datetime
@@ -23,12 +24,37 @@ APP_VERSION = os.environ.get('APP_VERSION', 'dev')
 POPULAR_CITIES = ['London', 'New York', 'Tokyo', 'Paris', 'Dubai',
                   'Sydney', 'Mumbai', 'Singapore', 'Delhi', 'Toronto']
 
+# Unit systems. temp symbol + wind label + factor to convert API wind to label.
+UNITS = {
+    'metric':   {'api': 'metric',   'temp': 'C', 'wind': 'km/h', 'wind_factor': 3.6},
+    'imperial': {'api': 'imperial', 'temp': 'F', 'wind': 'mph',  'wind_factor': 1.0},
+}
+
 # Fun fallback emoji per weather condition (used when no GIF available).
 CONDITION_EMOJI = {
     'Clear': '😎', 'Clouds': '☁️', 'Rain': '🌧️', 'Drizzle': '🌦️',
     'Thunderstorm': '⛈️', 'Snow': '⛄', 'Mist': '🌫️', 'Haze': '🌫️',
     'Fog': '🌫️', 'Smoke': '💨', 'Dust': '🏜️', 'Tornado': '🌪️',
 }
+
+# Kid-friendly fun facts, picked at random per weather condition.
+FUN_FACTS = {
+    'Clear': ["The Sun is so big that 1 million Earths could fit inside it!",
+              "Sunlight takes about 8 minutes to reach Earth."],
+    'Clouds': ["A single cloud can weigh more than a million kilograms!",
+               "Clouds are made of tiny water droplets floating in the air."],
+    'Rain': ["Raindrops are not tear-shaped — they look like tiny burgers!",
+             "Some raindrops fall at 30 km/h — faster than you can run!"],
+    'Drizzle': ["Drizzle drops are so tiny they almost float in the air.",
+                "Light drizzle can last for hours without soaking you."],
+    'Thunderstorm': ["Lightning is 5 times hotter than the surface of the Sun!",
+                     "Thunder is the sound lightning makes when it heats the air."],
+    'Snow': ["No two snowflakes are exactly the same!",
+             "Snow looks white but ice is actually clear."],
+    'Mist': ["Mist and fog are just clouds that touch the ground.",
+             "You can walk right through a cloud when it's foggy!"],
+}
+DEFAULT_FACT = "Weather changes every day — that's what makes it exciting!"
 
 
 @app.context_processor
@@ -73,9 +99,9 @@ def funny_gif(condition):
         return None
 
 
-def build_forecast(city_name):
+def build_forecast(location, units):
     """Fetch the 3-hour forecast once; return dict of daily + hourly views."""
-    params = {'q': city_name, 'appid': API_KEY, 'units': 'metric'}
+    params = dict(location, appid=API_KEY, units=UNITS[units]['api'])
     try:
         data = requests.get(FORECAST_URL, params=params, timeout=10).json()
     except requests.RequestException:
@@ -144,31 +170,47 @@ def dress_character(temp_c, condition_main):
     return items
 
 
-def fetch_weather(city_name):
-    """Return (weather_dict, error_dict). One is always None."""
+def to_celsius(temp, units):
+    """Normalise a temperature to Celsius (mood/dress use Celsius thresholds)."""
+    if units == 'imperial':
+        return (temp - 32) * 5.0 / 9.0
+    return temp
+
+
+def fetch_weather(location, units, fallback_name=''):
+    """Return (weather_dict, error_dict). One is always None.
+
+    location: dict of API location params, e.g. {'q': 'London'} or
+              {'lat': 51.5, 'lon': -0.1}.
+    """
     if not API_KEY:
-        return None, {'city': city_name,
+        return None, {'city': fallback_name or 'Unknown',
                       'country': 'Server missing OPENWEATHER_API_KEY'}
 
-    params = {'q': city_name, 'appid': API_KEY, 'units': 'metric'}
+    params = dict(location, appid=API_KEY, units=UNITS[units]['api'])
     try:
         response = requests.get(BASE_URL, params=params, timeout=10).json()
     except requests.RequestException as exc:
-        return None, {'city': city_name, 'country': str(exc)}
+        return None, {'city': fallback_name or 'Unknown', 'country': str(exc)}
 
     if str(response.get('cod')) != '200':
-        return None, {'city': city_name,
+        return None, {'city': fallback_name or 'that place',
                       'country': response.get('message', 'unknown error')}
 
     condition = response['weather'][0]
-    temp_c = response['main']['temp']
+    temp = response['main']['temp']
+    temp_c = to_celsius(temp, units)
+    unit = UNITS[units]
     weather = {
-        'city': city_name,
-        'temperature': "{:.1f}".format(temp_c),
+        'city': response.get('name') or fallback_name,
+        'temperature': "{:.1f}".format(temp),
+        'temp_symbol': unit['temp'],
         'mood': temp_mood(temp_c),
         'feels_like': "{:.0f}".format(response['main']['feels_like']),
         'humidity': response['main']['humidity'],
-        'wind': "{:.0f}".format(response.get('wind', {}).get('speed', 0) * 3.6),
+        'wind': "{:.0f}".format(response.get('wind', {}).get('speed', 0)
+                                * unit['wind_factor']),
+        'wind_unit': unit['wind'],
         'description': condition['description'],
         'icon': condition['icon'],
         # 'main' (Clear/Clouds/Rain/Snow...) drives the UI background.
@@ -178,22 +220,34 @@ def fetch_weather(city_name):
         'emoji': CONDITION_EMOJI.get(condition['main'], '🌈'),
         'gif': funny_gif(condition['main']),
         'accessories': dress_character(temp_c, condition['main']),
+        'fact': random.choice(FUN_FACTS.get(condition['main'], [DEFAULT_FACT])),
     }
     return weather, None
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if request.method == 'POST':
-        city_name = request.form['city'].upper()
+    src = request.form if request.method == 'POST' else request.args
+    units = src.get('units', 'metric')
+    if units not in UNITS:
+        units = 'metric'
+
+    # Location: prefer browser coordinates, else a typed/quick-pick city.
+    lat, lon = src.get('lat'), src.get('lon')
+    city_name = (src.get('city') or '').strip()
+    if lat and lon:
+        location = {'lat': lat, 'lon': lon}
+    elif city_name:
+        location = {'q': city_name.upper()}
     else:
+        location = {'q': DEFAULT_CITY}
         city_name = DEFAULT_CITY
 
-    weather, error = fetch_weather(city_name)
+    weather, error = fetch_weather(location, units, fallback_name=city_name)
     if error:
-        return render_template('index.html', weather_error=error)
-    forecast = build_forecast(city_name)
-    return render_template('index.html', weather=weather,
+        return render_template('index.html', weather_error=error, units=units)
+    forecast = build_forecast(location, units)
+    return render_template('index.html', weather=weather, units=units,
                            forecast=forecast['daily'], hourly=forecast['hourly'])
 
 
