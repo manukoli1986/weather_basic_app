@@ -108,3 +108,40 @@ jobs:
             sleep 2
           done
           echo "App did not respond"; docker logs weather-smoke; docker rm -f weather-smoke; exit 1
+
+      # Closes the loop with terraform-AI: opens a PR bumping project_weather-app's
+      # app.tfvars to the image just published, instead of someone editing it by
+      # hand. terraform-AI's project-infra.yml plans on that PR and applies on
+      # merge — this step only opens the PR, it never merges/applies itself.
+      # Needs TERRAFORM_AI_PAT: a token scoped to mk-ai-projects/terraform-AI
+      # with Contents (write) + Pull requests (write) permissions.
+      - name: Open PR to bump terraform-AI image tag
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.TERRAFORM_AI_PAT }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/mk-ai-projects/terraform-AI.git" /tmp/terraform-AI
+          cd /tmp/terraform-AI
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="bump-weather-app-${VERSION}"
+          git checkout -b "$BRANCH"
+
+          sed -i "s|^image *= .*|image                 = \"docker.io/manukoli1986/weather:${VERSION}\"|" project_weather-app/app.tfvars
+
+          if git diff --quiet project_weather-app/app.tfvars; then
+            echo "app.tfvars already at ${VERSION} — nothing to open a PR for."
+            exit 0
+          fi
+
+          git add project_weather-app/app.tfvars
+          git commit -m "bump weather-app image to ${VERSION}"
+          git push origin "$BRANCH"
+
+          gh pr create --repo mk-ai-projects/terraform-AI \
+            --title "bump weather-app image to ${VERSION}" \
+            --body "Auto-opened after weather_basic_app CI published docker.io/manukoli1986/weather:${VERSION}." \
+            --base main --head "$BRANCH"
