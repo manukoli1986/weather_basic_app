@@ -72,17 +72,25 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
         run: |
           IMG="${IMAGE_NAME}:sha-$(git rev-parse --short HEAD)"
           docker run -d --name weather-smoke \
             -e OPENWEATHER_API_KEY="$OPENWEATHER_API_KEY" \
+            -e GIPHY_API_KEY="$GIPHY_API_KEY" \
             -p 8080:8080 "$IMG"
           for i in $(seq 1 15); do
             if curl -fsS http://localhost:8080/ >/dev/null; then
               echo "App responded OK"
               # Read the version the running image reports (UI footer).
-              RUNNING_VER=$(curl -fsS http://localhost:8080/ | grep -oE 'class="version">v[^<]*' | sed 's/.*>v//')
+              HTML=$(curl -fsS http://localhost:8080/)
+              RUNNING_VER=$(echo "$HTML" | grep -oE 'class="version">v[^<]*' | sed 's/.*>v//')
               echo "Image reports version: $RUNNING_VER"
+              if echo "$HTML" | grep -q 'giphy.com'; then
+                echo "Funny GIF: loaded (GIPHY_API_KEY active)"
+              else
+                echo "Funny GIF: emoji fallback (no GIPHY_API_KEY)"
+              fi
               docker rm -f weather-smoke
               # Publish version to the run summary page so it's easy to see.
               {
