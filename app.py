@@ -116,6 +116,24 @@ def build_forecast(city_name):
     return forecast
 
 
+def dress_character(temp_c, condition_main):
+    """Accessories the cartoon 'wears' for the weather. List of (emoji, slot)."""
+    items = []
+    if temp_c <= 12:
+        items.append(('🧣', 'neck'))      # scarf when cold
+    if temp_c <= 0:
+        items.append(('🧤', 'side'))      # mittens when freezing
+    if condition_main in ('Rain', 'Drizzle', 'Thunderstorm'):
+        items.append(('☂️', 'top'))       # umbrella when wet
+    elif condition_main == 'Snow':
+        items.append(('🎿', 'side'))
+    elif temp_c > 22:
+        items.append(('🕶️', 'eyes'))      # sunglasses when warm/sunny
+    if temp_c > 30:
+        items.append(('🧢', 'top'))        # cap when hot
+    return items
+
+
 def fetch_weather(city_name):
     """Return (weather_dict, error_dict). One is always None."""
     if not API_KEY:
@@ -149,6 +167,7 @@ def fetch_weather(city_name):
         'is_day': condition['icon'].endswith('d'),
         'emoji': CONDITION_EMOJI.get(condition['main'], '🌈'),
         'gif': funny_gif(condition['main']),
+        'accessories': dress_character(temp_c, condition['main']),
     }
     return weather, None
 

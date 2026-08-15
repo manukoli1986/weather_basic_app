@@ -34,7 +34,23 @@
   body.fog     { background: linear-gradient(135deg, #606c88, #3f4c6b); }
   body.night   { background: linear-gradient(135deg, #0f2027, #2c5364); }
 
-  .wrap { width: 100%; max-width: 640px; }
+  .wrap { width: 100%; max-width: 640px; position: relative; z-index: 1; }
+
+  /* ---- Animated sky: particles float behind everything ---- */
+  #sky { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  .particle { position: absolute; top: -40px; will-change: transform; }
+  .drop { width: 2px; height: 18px; background: rgba(255,255,255,0.55); border-radius: 2px;
+          animation: fall linear infinite; }
+  .flake { color: #fff; opacity: 0.9; animation: fall linear infinite; }
+  .cloudy { font-size: 60px; opacity: 0.28; top: auto; animation: drift linear infinite; }
+  .sun-rays {
+    position: fixed; top: -120px; right: -120px; width: 320px; height: 320px; z-index: 0;
+    border-radius: 50%; background: radial-gradient(circle, rgba(255,236,150,0.55), transparent 60%);
+    animation: pulse 4s ease-in-out infinite; pointer-events: none;
+  }
+  @keyframes fall { to { transform: translateY(105vh); } }
+  @keyframes drift { from { transform: translateX(-120px); } to { transform: translateX(105vw); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.15); opacity: 0.8; } }
 
   .card {
     padding: 28px;
@@ -100,7 +116,20 @@
 
   /* ---- Kid cartoon that reacts to temperature ---- */
   .cartoon { text-align: center; margin-top: 22px; }
+  .char { position: relative; display: inline-block; }
   .cartoon .face { font-size: 96px; line-height: 1; display: inline-block; }
+  /* Accessories the character 'wears', positioned over the face */
+  .acc { position: absolute; font-size: 40px; pointer-events: none; }
+  .acc.top  { top: -26px; left: 50%; transform: translateX(-50%); }
+  .acc.eyes { top: 30px; left: 50%; transform: translateX(-50%); font-size: 34px; }
+  .acc.neck { bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .acc.side { top: 40px; right: -34px; }
+
+  .sound-btn {
+    position: fixed; top: 16px; right: 16px; z-index: 3; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.25); color: #fff;
+    font-size: 20px; width: 44px; height: 44px; border-radius: 50%;
+  }
   .cartoon .caption {
     margin-top: 10px; font-size: 17px; font-weight: 600;
     background: rgba(255,255,255,0.18); display: inline-block;
@@ -145,7 +174,16 @@
   .version { margin-top: 18px; font-size: 12px; opacity: 0.7; text-align: center; }
 </style>
 </head>
-<body class="{% if weather %}{{ weather.main|lower }}{% if not weather.is_day %} night{% endif %}{% endif %}">
+<body class="{% if weather %}{{ weather.main|lower }}{% if not weather.is_day %} night{% endif %}{% endif %}"
+      data-main="{% if weather %}{{ weather.main|lower }}{% endif %}"
+      data-day="{% if weather and weather.is_day %}1{% else %}0{% endif %}">
+
+  <!-- Animated weather particles live here (filled by JS) -->
+  <div id="sky"></div>
+
+  <!-- Sound on/off (kids: character talks + ambient weather sound) -->
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()" title="Sound on/off">🔇</button>
+
   <div class="wrap">
   <div class="card">
     <h1>🌤️ Weather App</h1>
@@ -171,8 +209,13 @@
     {% elif weather %}
     <!-- Kid cartoon: face + animation change with the temperature -->
     <div class="cartoon">
-      <div class="face {{ weather.mood.cls }}">{{ weather.mood.face }}</div>
-      <div class="caption">{{ weather.mood.caption }}</div>
+      <div class="char">
+        <div class="face {{ weather.mood.cls }}">{{ weather.mood.face }}</div>
+        {% for emoji, slot in weather.accessories %}
+        <span class="acc {{ slot }}">{{ emoji }}</span>
+        {% endfor %}
+      </div>
+      <div class="caption" id="caption">{{ weather.mood.caption }}</div>
     </div>
 
     <div class="now">
@@ -220,6 +263,82 @@
       document.getElementById('city').value = city;
       document.getElementById('wform').submit();
     }
+
+    // ---- Animated background particles, chosen by weather condition ----
+    (function () {
+      var sky = document.getElementById('sky');
+      var main = document.body.dataset.main || '';
+      var isDay = document.body.dataset.day === '1';
+
+      function make(cls, text, count, sizeFn, durFn) {
+        for (var i = 0; i < count; i++) {
+          var p = document.createElement('div');
+          p.className = 'particle ' + cls;
+          if (text) p.textContent = text;
+          p.style.left = Math.floor((i / count) * 100 + Math.random() * 6) + 'vw';
+          if (sizeFn) p.style.fontSize = sizeFn() + 'px';
+          p.style.animationDuration = durFn() + 's';
+          p.style.animationDelay = (-Math.random() * 6) + 's';
+          sky.appendChild(p);
+        }
+      }
+      if (main === 'rain' || main === 'drizzle' || main === 'thunderstorm') {
+        make('drop', '', 90, null, function () { return 0.5 + Math.random(); });
+      } else if (main === 'snow') {
+        make('flake', '❄', 50, function () { return 10 + Math.random() * 16; },
+             function () { return 4 + Math.random() * 4; });
+      } else if (main === 'clouds' || main === 'mist' || main === 'haze' || main === 'fog') {
+        make('cloudy', '☁️', 6, null, function () { return 25 + Math.random() * 25; });
+        for (var c = 0; c < sky.children.length; c++)
+          sky.children[c].style.top = (10 + Math.random() * 60) + 'vh';
+      } else if (main === 'clear' && isDay) {
+        var s = document.createElement('div'); s.className = 'sun-rays'; document.body.appendChild(s);
+      } else if (main === 'clear' && !isDay) {
+        make('flake', '⭐', 20, function () { return 8 + Math.random() * 10; },
+             function () { return 40; });   // near-still twinkly stars
+        for (var k = 0; k < sky.children.length; k++) {
+          sky.children[k].style.animation = 'none';
+          sky.children[k].style.top = (5 + Math.random() * 80) + 'vh';
+        }
+      }
+    })();
+
+    // ---- Sound: character speaks + light ambient. Starts muted (browser policy) ----
+    var soundOn = false, audioCtx = null, ambient = null;
+    function toggleSound() {
+      soundOn = !soundOn;
+      document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+      if (soundOn) { speakCaption(); startAmbient(); }
+      else { stopAmbient(); window.speechSynthesis && speechSynthesis.cancel(); }
+    }
+    function speakCaption() {
+      var cap = document.getElementById('caption');
+      if (!cap || !window.speechSynthesis) return;
+      var u = new SpeechSynthesisUtterance(cap.textContent);
+      u.rate = 0.95; u.pitch = 1.3;   // cheerful, kid-friendly voice
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    }
+    function startAmbient() {
+      var main = document.body.dataset.main || '';
+      if (!(main === 'rain' || main === 'drizzle' || main === 'thunderstorm' ||
+            main === 'clear' || main === 'clouds')) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        // White-noise buffer filtered = rain hiss / wind whoosh.
+        var buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+        var data = buf.getChannelData(0);
+        for (var i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        var src = audioCtx.createBufferSource(); src.buffer = buf; src.loop = true;
+        var filter = audioCtx.createBiquadFilter();
+        var wet = (main === 'rain' || main === 'drizzle' || main === 'thunderstorm');
+        filter.type = wet ? 'highpass' : 'lowpass';
+        filter.frequency.value = wet ? 1000 : 500;
+        var gain = audioCtx.createGain(); gain.gain.value = wet ? 0.08 : 0.04;
+        src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+        src.start(); ambient = { src: src, gain: gain };
+      } catch (e) { /* audio unsupported — ignore */ }
+    }
+    function stopAmbient() { if (ambient) { try { ambient.src.stop(); } catch (e) {} ambient = null; } }
   </script>
 </body>
 </html>
