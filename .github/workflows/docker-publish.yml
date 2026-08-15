@@ -4,6 +4,7 @@ name: Build and Publish Docker Image
 # Push a tag like v1.0.0 to trigger a build + push to Docker Hub.
 # Also builds (without pushing) on PRs so broken images are caught early.
 on:
+  workflow_dispatch:          # manual trigger from Actions tab
   push:
     branches: [ master ]
     tags: [ 'v*.*.*' ]      # e.g. v1.0.0, v1.2.3
