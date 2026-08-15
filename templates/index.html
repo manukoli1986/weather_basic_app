@@ -96,6 +96,47 @@
   .fc .hl b { font-weight: 700; }
   .fc .lo { opacity: 0.7; }
 
+  /* ---- Kid cartoon that reacts to temperature ---- */
+  .cartoon { text-align: center; margin-top: 22px; }
+  .cartoon .face { font-size: 96px; line-height: 1; display: inline-block; }
+  .cartoon .caption {
+    margin-top: 10px; font-size: 17px; font-weight: 600;
+    background: rgba(255,255,255,0.18); display: inline-block;
+    padding: 8px 16px; border-radius: 20px;
+  }
+
+  /* Freezing: fast shiver */
+  .face.freezing { animation: shiver 0.15s infinite; }
+  /* Cold: slower shiver */
+  .face.cold { animation: shiver 0.3s infinite; }
+  /* Nice: happy bounce */
+  .face.nice { animation: bounce 1s ease-in-out infinite; }
+  /* Warm: gentle sway */
+  .face.warm { animation: sway 2s ease-in-out infinite; }
+  /* Hot: wobble + fan */
+  .face.hot { animation: wobble 0.6s ease-in-out infinite; }
+
+  @keyframes shiver {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(-3px, 1px) rotate(-4deg); }
+    50%  { transform: translate(2px, -1px) rotate(3deg); }
+    75%  { transform: translate(-2px, 2px) rotate(-2deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-16px); }
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-6deg); }
+    50%      { transform: rotate(6deg); }
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25%      { transform: rotate(5deg) scale(1.05); }
+    75%      { transform: rotate(-5deg) scale(1.05); }
+  }
+
   .error { text-align: center; margin-top: 22px; }
   .error h2 { font-size: 40px; margin-bottom: 10px; }
 
@@ -126,6 +167,12 @@
       <p>{{ weather_error.country }}</p>
     </div>
     {% elif weather %}
+    <!-- Kid cartoon: face + animation change with the temperature -->
+    <div class="cartoon">
+      <div class="face {{ weather.mood.cls }}">{{ weather.mood.face }}</div>
+      <div class="caption">{{ weather.mood.caption }}</div>
+    </div>
+
     <div class="now">
       <div class="fun">
         {% if weather.gif %}

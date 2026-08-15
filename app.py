@@ -36,6 +36,27 @@ def inject_globals():
     return {'app_version': APP_VERSION, 'popular_cities': POPULAR_CITIES}
 
 
+def temp_mood(temp_c):
+    """Kid-friendly cartoon reaction by temperature (Celsius).
+
+    Returns dict: css class (animation), big emoji face, and a fun caption.
+    """
+    if temp_c <= 0:
+        return {'cls': 'freezing', 'face': '🥶',
+                'caption': "Brrr! It's freezing — I'm an icicle!"}
+    if temp_c <= 12:
+        return {'cls': 'cold', 'face': '😨',
+                'caption': "So chilly! Grab a warm jacket!"}
+    if temp_c <= 22:
+        return {'cls': 'nice', 'face': '😄',
+                'caption': "Perfect weather — let's play outside!"}
+    if temp_c <= 30:
+        return {'cls': 'warm', 'face': '😎',
+                'caption': "Nice and warm — sunglasses on!"}
+    return {'cls': 'hot', 'face': '🥵',
+            'caption': "Phew! It's boiling — drink lots of water!"}
+
+
 def funny_gif(condition):
     """Return a funny GIF URL for the weather condition, or None."""
     if not GIPHY_API_KEY:
@@ -112,9 +133,11 @@ def fetch_weather(city_name):
                       'country': response.get('message', 'unknown error')}
 
     condition = response['weather'][0]
+    temp_c = response['main']['temp']
     weather = {
         'city': city_name,
-        'temperature': "{:.1f}".format(response['main']['temp']),
+        'temperature': "{:.1f}".format(temp_c),
+        'mood': temp_mood(temp_c),
         'feels_like': "{:.0f}".format(response['main']['feels_like']),
         'humidity': response['main']['humidity'],
         'wind': "{:.0f}".format(response.get('wind', {}).get('speed', 0) * 3.6),
