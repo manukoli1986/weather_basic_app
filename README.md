@@ -8,9 +8,13 @@ UI background changes with the weather; build version shown in the corner.
 ```bash
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-export OPENWEATHER_API_KEY=<your_key>
+# Put OPENWEATHER_API_KEY=... in a .env file (gitignored), or export it:
+# export OPENWEATHER_API_KEY=<your_key>
 python app.py            # http://localhost:8080
 ```
+
+`app.py` loads `.env` automatically via `python-dotenv`. A placeholder or fake key
+will start the server but show an **Invalid OPENWEATHER_API_KEY** error in the UI.
 
 ## MCP server
 
@@ -21,16 +25,40 @@ connect a client.
 
 ## Run with Docker
 
+**Published image:** `manukoli1986/weather` (linux/amd64 + linux/arm64).
+
+```bash
+# From a .env file in this directory:
+docker run --rm -p 8080:8080 --env-file .env manukoli1986/weather:latest
+
+# Or pass the key explicitly (must be a real OpenWeatherMap key):
+docker run --rm -p 8080:8080 \
+  -e OPENWEATHER_API_KEY=<your_key> \
+  manukoli1986/weather:latest
+```
+
+Build locally:
+
 ```bash
 docker build -t weather --build-arg APP_VERSION=local .
-docker run -p 8080:8080 -e OPENWEATHER_API_KEY=<your_key> weather
+docker run --rm -p 8080:8080 --env-file .env weather
 ```
+
+Or with Compose (reads `.env`):
+
+```bash
+docker compose up --build
+```
+
+> Note: an older Hub repo `manukoli1986/weather-app` also exists. Prefer
+> `manukoli1986/weather`, which this project's CI publishes.
 
 ## Config (env vars)
 
 | Var | Purpose | Default |
 |-----|---------|---------|
 | `OPENWEATHER_API_KEY` | API key (required) | — |
+| `GIPHY_API_KEY` | optional funny GIF | — |
 | `DEFAULT_CITY` | city on first load | `Lucknow` |
 | `APP_VERSION` | version shown in UI | `dev` |
 | `FLASK_DEBUG` | `true` to enable debug | `false` |
@@ -38,7 +66,8 @@ docker run -p 8080:8080 -e OPENWEATHER_API_KEY=<your_key> weather
 ## CI/CD — GitHub Actions
 
 Workflow: `.github/workflows/docker-publish.yml`. One pipeline that builds and
-publishes the Docker image to Docker Hub (`manukoli1986/weather`).
+publishes a **multi-arch** Docker image to Docker Hub (`manukoli1986/weather`
+for `linux/amd64` and `linux/arm64`).
 
 **Triggers:** push to `master`, git tag `v*.*.*`, manual (`workflow_dispatch`),
 and PRs (build-only, no push).

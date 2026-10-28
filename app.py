@@ -5,7 +5,13 @@ import random
 import requests
 from collections import OrderedDict
 from datetime import datetime
+from pathlib import Path
+
+from dotenv import load_dotenv
 from flask import Flask, render_template, request
+
+# Local runs: load .env if present. Docker/CI should still pass env explicitly.
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 app = Flask(__name__)
 app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
@@ -194,8 +200,13 @@ def fetch_weather(location, units, fallback_name=''):
         return None, {'city': fallback_name or 'Unknown', 'country': str(exc)}
 
     if str(response.get('cod')) != '200':
-        return None, {'city': fallback_name or 'that place',
-                      'country': response.get('message', 'unknown error')}
+        msg = response.get('message', 'unknown error')
+        # OpenWeather returns 401 / "Invalid API key" for bad keys — surface a clearer hint.
+        if str(response.get('cod')) == '401' or 'invalid api key' in str(msg).lower():
+            msg = ('Invalid OPENWEATHER_API_KEY. Pass a real key with '
+                   '-e OPENWEATHER_API_KEY=... (Docker) or put it in .env. '
+                   'Get one free at https://openweathermap.org/api')
+        return None, {'city': fallback_name or 'that place', 'country': msg}
 
     condition = response['weather'][0]
     temp = response['main']['temp']
