@@ -1,14 +1,17 @@
 version: "3.8"
 services:
-    web:
-      image: weather
-      build: .
-      environment:
-        # Pass the key from your shell/env: export OPENWEATHER_API_KEY=xxx
-        - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
-      deploy:
-        replicas: 2
-        restart_policy:
-          condition: on-failure
-      ports:
-        - "8080:8080"
+  web:
+    image: manukoli1986/weather:latest
+    build:
+      context: .
+      args:
+        APP_VERSION: local
+    env_file:
+      - .env
+    environment:
+      # Shell export wins over env_file when both are set.
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      GIPHY_API_KEY: ${GIPHY_API_KEY:-}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
